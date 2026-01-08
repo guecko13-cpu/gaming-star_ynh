@@ -16,6 +16,6 @@ ynh_backup --src_path="/etc/nginx/conf.d/${domain}.d/${app}.conf"
 ynh_backup --src_path="/etc/php/${phpversion}/fpm/pool.d/${app}.conf" || true
 ynh_backup --src_path="/etc/sudoers.d/${app}"
 ynh_backup --src_path="/etc/logrotate.d/${app}"
-ynh_backup --src_path="/usr/local/sbin/${app}-maintenance"
+ynh_backup --src_path="/usr/local/sbin/${app}-maintenance-root"
 
 ynh_backup --src_path="/var/lib/mysql/${db_name}" || true

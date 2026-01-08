@@ -65,7 +65,7 @@ start_upgrade() {
 
     systemd-run --quiet --collect \
         --unit="${app}-upgrade-$(date +%s)" \
-        /usr/local/sbin/${app}-maintenance run-upgrade "$app" >> "$maintenance_log" 2>&1
+        /usr/local/sbin/${app}-maintenance-root run-upgrade "$app" >> "$maintenance_log" 2>&1
 }
 
 run_upgrade() {

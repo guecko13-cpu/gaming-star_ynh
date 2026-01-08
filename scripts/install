@@ -65,15 +65,15 @@ ynh_add_nginx_config
 ynh_script_progression --message="Deploying maintenance UI..." --weight=2
 
 mkdir -p "$install_dir/maintenance"
-ynh_config_add --template="conf/ynh-maintenance/index.php" --destination="$install_dir/maintenance/index.php"
-ynh_config_add --template="conf/ynh-maintenance/action.php" --destination="$install_dir/maintenance/action.php"
-ynh_config_add --template="conf/ynh-maintenance/logs.php" --destination="$install_dir/maintenance/logs.php"
-ynh_config_add --template="conf/ynh-maintenance/style.css" --destination="$install_dir/maintenance/style.css"
+ynh_config_add --template="conf/maintenance/index.php" --destination="$install_dir/maintenance/index.php"
+ynh_config_add --template="conf/maintenance/action.php" --destination="$install_dir/maintenance/action.php"
+ynh_config_add --template="conf/maintenance/logs.php" --destination="$install_dir/maintenance/logs.php"
+ynh_config_add --template="conf/maintenance/style.css" --destination="$install_dir/maintenance/style.css"
 
 ynh_script_progression --message="Configuring maintenance helper..." --weight=2
 
-ynh_config_add --template="conf/ynh-maintenance/maintenance-script" --destination="/usr/local/sbin/${app}-maintenance"
-chmod 750 "/usr/local/sbin/${app}-maintenance"
+ynh_config_add --template="conf/maintenance-root.sh" --destination="/usr/local/sbin/${app}-maintenance-root"
+chmod 750 "/usr/local/sbin/${app}-maintenance-root"
 
 setup_sudoers
 setup_logrotate

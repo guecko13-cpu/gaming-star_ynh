@@ -7,7 +7,7 @@ if (!in_array($action, $allowed, true)) {
     exit;
 }
 $command = sprintf(
-    'sudo /usr/local/sbin/%s-maintenance %s %s',
+    'sudo /usr/local/sbin/%s-maintenance-root %s %s',
     escapeshellarg($app),
     escapeshellarg($action),
     escapeshellarg($app)

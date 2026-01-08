@@ -10,5 +10,5 @@ ynh_remove_nginx_config
 
 rm -f "/etc/sudoers.d/${app}"
 rm -f "/etc/logrotate.d/${app}"
-rm -f "/usr/local/sbin/${app}-maintenance"
+rm -f "/usr/local/sbin/${app}-maintenance-root"
 
