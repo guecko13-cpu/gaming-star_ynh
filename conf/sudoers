@@ -1,0 +1,1 @@
+__APP__ ALL=NOPASSWD: /usr/local/bin/__APP__-ynh-upgrade __APP__

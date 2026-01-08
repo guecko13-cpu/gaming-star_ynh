@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -euo pipefail
+
+app="$1"
+
+source /usr/share/yunohost/helpers
+
+log_dir=$(ynh_app_setting_get --app="$app" --key=data_dir)/logs
+package_repo_url=$(ynh_app_setting_get --app="$app" --key=package_repo_url)
+
+mkdir -p "$log_dir"
+
+status_file="$log_dir/upgrade.status"
+log_file="$log_dir/upgrade.log"
+
+echo "running" > "$status_file"
+
+(
+    echo "[$(date -Is)] Starting upgrade" >> "$log_file"
+    if [ -z "$package_repo_url" ]; then
+        echo "[$(date -Is)] Missing package_repo_url" >> "$log_file"
+        echo "failed" > "$status_file"
+        exit 1
+    fi
+    yunohost app upgrade "$app" -u "$package_repo_url" --debug --force >> "$log_file" 2>&1
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        echo "success" > "$status_file"
+        echo "[$(date -Is)] Upgrade completed" >> "$log_file"
+    else
+        echo "failed" > "$status_file"
+        echo "[$(date -Is)] Upgrade failed with code $rc" >> "$log_file"
+    fi
+) &
+
+disown
+
+exit 0

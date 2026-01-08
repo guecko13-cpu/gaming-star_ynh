@@ -1,0 +1,3 @@
+[default]
+    args = "--domain=example.tld --path=/gaming-star"
+
