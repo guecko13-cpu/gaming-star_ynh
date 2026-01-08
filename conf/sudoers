@@ -1,1 +1,1 @@
-__APP__ ALL=NOPASSWD: /usr/local/bin/__APP__-ynh-upgrade __APP__
+__APP__ ALL=NOPASSWD: /usr/local/sbin/__APP__-maintenance-root *

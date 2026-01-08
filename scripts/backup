@@ -6,7 +6,9 @@ source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
 phpversion=$(ynh_app_setting_get --app="$app" --key=phpversion || true)
-phpversion=${phpversion:-$(php -r 'echo PHP_MAJOR_VERSION.\".\".PHP_MINOR_VERSION;')}
+phpversion=${phpversion:-$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')}
+
+load_settings
 
 ynh_backup --src_path="$install_dir"
 ynh_backup --src_path="$data_dir"
@@ -14,5 +16,5 @@ ynh_backup --src_path="/etc/nginx/conf.d/${domain}.d/${app}.conf"
 ynh_backup --src_path="/etc/php/${phpversion}/fpm/pool.d/${app}.conf" || true
 ynh_backup --src_path="/etc/sudoers.d/${app}"
 ynh_backup --src_path="/etc/logrotate.d/${app}"
-
-ynh_backup --src_path="/var/lib/mysql/${db_name}"
+ynh_backup --src_path="/usr/local/sbin/${app}-maintenance-root"
+ynh_backup --src_path="/var/lib/mysql/${db_name}" || true

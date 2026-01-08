@@ -6,56 +6,74 @@ source /usr/share/yunohost/helpers
 
 app="${app:-gaming-star}"
 
-UPSTREAM_REPO="guecko13-cpu/gaming-star"
-UPSTREAM_REF="v1.0.0"
-UPSTREAM_SHA256=""
-
 install_dir=$(ynh_app_setting_get --app="$app" --key=install_dir || true)
 data_dir=$(ynh_app_setting_get --app="$app" --key=data_dir || true)
 
+load_settings() {
+    domain=$(ynh_app_setting_get --app="$app" --key=domain)
+    path=$(ynh_app_setting_get --app="$app" --key=path)
+    upstream_repo=$(ynh_app_setting_get --app="$app" --key=upstream_repo)
+    upstream_ref=$(ynh_app_setting_get --app="$app" --key=upstream_ref)
+    package_repo_url=$(ynh_app_setting_get --app="$app" --key=package_repo_url)
+    github_token=$(ynh_app_setting_get --app="$app" --key=github_token)
+    db_name=$(ynh_app_setting_get --app="$app" --key=db_name)
+    db_user=$(ynh_app_setting_get --app="$app" --key=db_user)
+    db_pwd=$(ynh_app_setting_get --app="$app" --key=db_pwd)
+}
+
 ensure_github_token() {
-    local github_token
-    github_token=$(ynh_app_setting_get --app="$app" --key=github_token || true)
-    if [ -z "$github_token" ]; then
-        ynh_print_warn "Repo privé: fournir github_token lors de l'installation/upgrade."
-        return 1
+    if [ -z "${github_token:-}" ]; then
+        ynh_print_err "Repo privé: fournir github_token pour télécharger les sources."
+        ynh_die --message="Repo privé: fournir github_token"
     fi
 }
 
 download_upstream() {
-    local github_token
+    local repo="$1"
+    local ref="$2"
+    local token="$3"
     local tmp_src
-    github_token=$(ynh_app_setting_get --app="$app" --key=github_token || true)
-    if [ -z "$github_token" ]; then
-        ynh_print_warn "Repo privé: fournir github_token lors de l'installation/upgrade."
+
+    if [ -z "$token" ]; then
+        ynh_print_err "Repo privé: fournir github_token pour télécharger les sources."
         return 1
     fi
 
     tmp_src=$(mktemp -d)
-    ynh_print_info "Téléchargement des sources gaming-star (ref: ${UPSTREAM_REF})."
+    ynh_print_info "Téléchargement des sources gaming-star (${repo}@${ref})."
 
     set +x
-    curl -sSL -H "Authorization: token ${github_token}" \
-        "https://api.github.com/repos/${UPSTREAM_REPO}/tarball/${UPSTREAM_REF}" \
+    curl -fsSL -H "Authorization: Bearer ${token}" \
+        "https://api.github.com/repos/${repo}/tarball/${ref}" \
         -o "${tmp_src}/src.tgz"
     set +x
-
-    if [ -n "$UPSTREAM_SHA256" ]; then
-        echo "${UPSTREAM_SHA256}  ${tmp_src}/src.tgz" | sha256sum -c -
-    fi
 
     echo "$tmp_src"
 }
 
 install_sources() {
     local tmp_src
-    tmp_src=$(download_upstream)
-    mkdir -p "$install_dir"
-    tar -xzf "${tmp_src}/src.tgz" -C "$tmp_src"
     local extracted
+    local staging_dir
+
+    tmp_src=$(download_upstream "$upstream_repo" "$upstream_ref" "$github_token")
+    mkdir -p "$install_dir"
+
+    tar -xzf "${tmp_src}/src.tgz" -C "$tmp_src"
     extracted=$(find "$tmp_src" -maxdepth 1 -mindepth 1 -type d | head -n1)
-    rsync -a --delete "${extracted}/" "$install_dir/"
-    rm -rf "$tmp_src"
+
+    staging_dir=$(mktemp -d)
+    rsync -a \
+        --exclude="maintenance" \
+        --exclude="config" \
+        "${extracted}/" "$staging_dir/"
+
+    rsync -a --delete \
+        --exclude="maintenance" \
+        --exclude="config" \
+        "${staging_dir}/" "$install_dir/"
+
+    rm -rf "$tmp_src" "$staging_dir"
 }
 
 create_config() {
@@ -86,7 +104,9 @@ write_metadata() {
     cat <<EOF_META > "$metadata_file"
 {
   "package_version": "${package_version}",
-  "upstream_ref": "${UPSTREAM_REF}"
+  "upstream_repo": "${upstream_repo}",
+  "upstream_ref": "${upstream_ref}"
+
 }
 EOF_META
 }

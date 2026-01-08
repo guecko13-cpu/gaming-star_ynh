@@ -5,14 +5,11 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-yunohost service remove "$app" || true
-
-yunohost service remove "$app-maintenance" || true
-
 ynh_remove_fpm_config
 ynh_remove_nginx_config
 
 rm -f "/etc/sudoers.d/${app}"
 rm -f "/etc/logrotate.d/${app}"
-rm -f "/usr/local/bin/${app}-ynh-upgrade"
+rm -f "/usr/local/sbin/${app}-maintenance-root"
+
 

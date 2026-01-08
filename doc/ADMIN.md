@@ -4,8 +4,9 @@ L'interface de maintenance YunoHost est disponible sur `/ynh-maintenance`.
 Elle est protégée par la permission dédiée `maintenance` (groupe `admins` par défaut).
 
 Depuis cette interface, vous pouvez :
-- lancer un upgrade
-- consulter les logs d'upgrade
+- lancer un upgrade en arrière-plan (systemd-run)
+- vérifier l'upstream
+- consulter les logs `maintenance.log` et `update.log`
 
 ## Token GitHub
 
