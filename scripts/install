@@ -1,0 +1,72 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /usr/share/yunohost/helpers
+source "$(dirname "$0")/_common.sh"
+
+ynh_script_progression --message="Saving app settings..." --weight=1
+
+ynh_app_setting_set --app="$app" --key=domain --value="$domain"
+ynh_app_setting_set --app="$app" --key=path --value="$path"
+ynh_app_setting_set --app="$app" --key=init_main_permission --value="$init_main_permission"
+ynh_app_setting_set --app="$app" --key=init_maintenance_permission --value="$init_maintenance_permission"
+ynh_app_setting_set --app="$app" --key=package_repo_url --value="${YNH_APP_PACKAGE_URL:-}"
+
+set +x
+ynh_app_setting_set --app="$app" --key=github_token --value="${github_token:-}"
+set +x
+
+ynh_app_setting_set --app="$app" --key=db_name --value="$db_name"
+ynh_app_setting_set --app="$app" --key=db_user --value="$db_user"
+ynh_app_setting_set --app="$app" --key=db_pwd --value="$db_pwd"
+
+install_dir=$(ynh_app_setting_get --app="$app" --key=install_dir)
+data_dir=$(ynh_app_setting_get --app="$app" --key=data_dir)
+
+package_version="${YNH_APP_VERSION:-$(grep -m1 '^version' \"/etc/yunohost/apps/${app}/manifest.toml\" | cut -d'\"' -f2)}"
+ynh_app_setting_set --app="$app" --key=package_version --value="$package_version"
+
+ynh_script_progression --message="Downloading and installing sources..." --weight=5
+
+install_sources
+
+ynh_script_progression --message="Configuring application..." --weight=3
+
+create_config
+link_config
+write_metadata
+
+mkdir -p "$data_dir/public-data"
+chown -R "$app":"$app" "$data_dir"
+chown -R "$app":"$app" "$install_dir"
+
+ynh_script_progression --message="Configuring services..." --weight=4
+
+ynh_add_fpm_config
+ynh_add_nginx_config
+
+ynh_script_progression --message="Deploying maintenance UI..." --weight=2
+
+mkdir -p "$install_dir/ynh-maintenance"
+ynh_config_add --template="conf/ynh-maintenance/index.php" --destination="$install_dir/ynh-maintenance/index.php"
+ynh_config_add --template="conf/ynh-maintenance/upgrade.php" --destination="$install_dir/ynh-maintenance/upgrade.php"
+ynh_config_add --template="conf/ynh-maintenance/logs.php" --destination="$install_dir/ynh-maintenance/logs.php"
+
+ynh_config_add --template="conf/ynh-maintenance/style.css" --destination="$install_dir/ynh-maintenance/style.css"
+
+ynh_script_progression --message="Configuring system scripts..." --weight=2
+
+ynh_config_add --template="conf/ynh-maintenance/upgrade-script" --destination="/usr/local/bin/${app}-ynh-upgrade"
+chmod 750 "/usr/local/bin/${app}-ynh-upgrade"
+
+setup_sudoers
+setup_logrotate
+
+yunohost service add "$app" --log "$data_dir/logs/${app}.log"
+
+yunohost service add "$app-maintenance" --log "$data_dir/logs/upgrade.log" || true
+
+yunohost app ssowatconf
+
+ynh_script_progression --message="Installation completed." --weight=1

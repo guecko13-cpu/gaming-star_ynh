@@ -1,0 +1,44 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /usr/share/yunohost/helpers
+source "$(dirname "$0")/_common.sh"
+
+ynh_script_progression --message="Loading settings..." --weight=1
+
+domain=$(ynh_app_setting_get --app="$app" --key=domain)
+path=$(ynh_app_setting_get --app="$app" --key=path)
+install_dir=$(ynh_app_setting_get --app="$app" --key=install_dir)
+data_dir=$(ynh_app_setting_get --app="$app" --key=data_dir)
+
+db_name=$(ynh_app_setting_get --app="$app" --key=db_name)
+db_user=$(ynh_app_setting_get --app="$app" --key=db_user)
+db_pwd=$(ynh_app_setting_get --app="$app" --key=db_pwd)
+
+package_version="${YNH_APP_VERSION:-$(grep -m1 '^version' \"/etc/yunohost/apps/${app}/manifest.toml\" | cut -d'\"' -f2)}"
+ynh_app_setting_set --app="$app" --key=package_version --value="$package_version"
+
+ynh_script_progression --message="Downloading new sources..." --weight=5
+
+install_sources
+
+ynh_script_progression --message="Refreshing configuration..." --weight=3
+
+create_config
+link_config
+write_metadata
+
+ynh_script_progression --message="Updating services..." --weight=3
+
+ynh_add_fpm_config
+ynh_add_nginx_config
+
+setup_sudoers
+setup_logrotate
+
+yunohost app ssowatconf
+
+yunohost service add "$app" --log "$data_dir/logs/${app}.log" || true
+
+ynh_script_progression --message="Upgrade completed." --weight=1
