@@ -106,6 +106,7 @@ write_metadata() {
   "package_version": "${package_version}",
   "upstream_repo": "${upstream_repo}",
   "upstream_ref": "${upstream_ref}"
+
 }
 EOF_META
 }

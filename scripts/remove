@@ -12,3 +12,4 @@ rm -f "/etc/sudoers.d/${app}"
 rm -f "/etc/logrotate.d/${app}"
 rm -f "/usr/local/sbin/${app}-maintenance-root"
 
+
