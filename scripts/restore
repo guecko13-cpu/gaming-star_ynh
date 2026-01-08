@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /usr/share/yunohost/helpers
+source "$(dirname "$0")/_common.sh"
+
+ynh_restore
+
+yunohost app ssowatconf
+
