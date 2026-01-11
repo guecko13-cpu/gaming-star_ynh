@@ -1,20 +1,26 @@
-## Maintenance
+# Casino Games Fun - Administration
 
-L'interface de maintenance YunoHost est disponible sur `/ynh-maintenance`.
-Elle est protégée par la permission dédiée `maintenance` (groupe `admins` par défaut).
+## Services
 
-Depuis cette interface, vous pouvez :
-- lancer un upgrade en arrière-plan (systemd-run)
-- vérifier l'upstream
-- consulter les logs `maintenance.log` et `update.log`
+- Backend Node.js : service systemd `casino-games-fun`.
+- Nginx sert :
+  - `/` → frontend statique
+  - `/admin/` → admin statique
+  - `/api/` et `/socket.io/` → reverse-proxy vers le backend
 
-## Token GitHub
+## Logs
 
-Le dépôt upstream est privé. Un token GitHub avec accès lecture doit être fourni lors de l'installation ou de l'upgrade.
-Le token est enregistré dans les paramètres de l'application et n'est jamais affiché dans les logs.
+- Journaux systemd : `journalctl -u casino-games-fun`
 
-Pour le mettre à jour :
+## Configuration
+
+- Le fichier `.env` est stocké dans le répertoire data de l'application et lié dans le répertoire d'installation.
+- Les variables critiques : `PORT`, `JWT_SECRET`, `DATABASE_URL`.
+
+## Vérifications rapides
 
 ```bash
-yunohost app setting set gaming-star --key=github_token --value="TOKEN"
+curl -fsS http://127.0.0.1:<port>/api/health
 ```
+
+Remplacez `<port>` par le port interne attribué à l'installation.

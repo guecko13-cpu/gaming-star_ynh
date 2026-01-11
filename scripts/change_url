@@ -5,25 +5,20 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-old_domain=$domain
-old_path=$path
+old_domain="$YNH_APP_OLD_DOMAIN"
+old_path="$YNH_APP_OLD_PATH"
+new_domain="$YNH_APP_NEW_DOMAIN"
+new_path="$YNH_APP_NEW_PATH"
 
-new_domain=$new_domain
-new_path=$new_path
+load_settings
 
-domain=$new_domain
-path=$new_path
+ynh_script_progression --message="Updating URL settings..." --weight=2
 
-ynh_script_progression --message="Updating configuration..." --weight=1
+ynh_change_url_nginx_config --domain="$old_domain" --path="$old_path" --new_domain="$new_domain" --new_path="$new_path"
 
-ynh_replace_string --match="https://${old_domain}${old_path}" --replace="https://${new_domain}${new_path}" --target_file="$data_dir/config/app.conf.php"
 ynh_app_setting_set --app="$app" --key=domain --value="$new_domain"
 ynh_app_setting_set --app="$app" --key=path --value="$new_path"
 
-ynh_script_progression --message="Updating nginx configuration..." --weight=2
-
-ynh_add_nginx_config
-
 yunohost app ssowatconf
 
-ynh_script_progression --message="Change URL completed." --weight=1
+ynh_script_progression --message="URL update completed." --weight=1

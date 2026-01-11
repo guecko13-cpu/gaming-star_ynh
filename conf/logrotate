@@ -1,9 +1,0 @@
-__DATA_DIR__/logs/*.log {
-    rotate 7
-    daily
-    missingok
-    notifempty
-    compress
-    delaycompress
-    copytruncate
-}
