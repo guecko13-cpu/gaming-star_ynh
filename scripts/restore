@@ -5,7 +5,23 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-ynh_restore
+load_settings
 
-yunohost app ssowatconf
+ynh_script_progression --message="Restoring application data..." --weight=2
 
+ynh_restore_file --origin_path="$install_dir"
+ynh_restore_file --origin_path="$data_dir"
+
+ynh_script_progression --message="Reapplying permissions..." --weight=2
+
+chown -R "$app":"$app" "$install_dir" "$data_dir"
+
+ynh_script_progression --message="Restoring services..." --weight=2
+
+ynh_add_nginx_config
+ynh_add_systemd_config
+
+ynh_systemd_action --service_name="$app" --action=restart
+ynh_systemd_action --service_name=nginx --action=reload
+
+ynh_script_progression --message="Restore completed." --weight=1

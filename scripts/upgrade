@@ -5,45 +5,27 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-ynh_script_progression --message="Loading settings..." --weight=1
-
-install_dir=$(ynh_app_setting_get --app="$app" --key=install_dir)
-data_dir=$(ynh_app_setting_get --app="$app" --key=data_dir)
-
 load_settings
-ensure_github_token
 
-package_version="${YNH_APP_VERSION:-$(grep -m1 '^version' "/etc/yunohost/apps/${app}/manifest.toml" | cut -d'"' -f2)}"
-ynh_app_setting_set --app="$app" --key=package_version --value="$package_version"
+ynh_script_progression --message="Upgrading application sources..." --weight=5
 
-ynh_script_progression --message="Downloading new sources..." --weight=5
+ynh_setup_source --dest_dir="$install_dir"
 
-install_sources
+ynh_script_progression --message="Refreshing assets..." --weight=3
 
-ynh_script_progression --message="Refreshing configuration..." --weight=3
+ensure_env_file
+sync_static_assets
 
-create_config
-link_config
-write_metadata
+chown -R "$app":"$app" "$install_dir" "$data_dir"
 
-ynh_script_progression --message="Updating services..." --weight=3
+ynh_script_progression --message="Restarting services..." --weight=3
 
-ynh_add_fpm_config
-ynh_add_nginx_config
+ynh_systemd_action --service_name="$app" --action=restart
+ynh_systemd_action --service_name=nginx --action=reload
 
-ynh_script_progression --message="Updating maintenance UI..." --weight=2
+ynh_script_progression --message="Running healthcheck..." --weight=2
 
-mkdir -p "$install_dir/maintenance"
-ynh_config_add --template="conf/maintenance/index.php" --destination="$install_dir/maintenance/index.php"
-ynh_config_add --template="conf/maintenance/action.php" --destination="$install_dir/maintenance/action.php"
-ynh_config_add --template="conf/maintenance/logs.php" --destination="$install_dir/maintenance/logs.php"
-ynh_config_add --template="conf/maintenance/style.css" --destination="$install_dir/maintenance/style.css"
-
-ynh_config_add --template="conf/maintenance-root.sh" --destination="/usr/local/sbin/${app}-maintenance-root"
-chmod 750 "/usr/local/sbin/${app}-maintenance-root"
-
-setup_sudoers
-setup_logrotate
+check_health
 
 yunohost app ssowatconf
 

@@ -1,15 +1,15 @@
 packaging_format = 2
-id = "gaming-star"
-name = "Gaming Star"
-description.en = "Gaming community platform"
-description.fr = "Plateforme communautaire gaming"
+id = "casino-games-fun"
+name = "Casino Games Fun"
+description.en = "Casino games platform"
+description.fr = "Plateforme de jeux de casino"
 version = "1.0.0~ynh1"
 maintainers = ["guecko13-cpu"]
 
 [upstream]
 license = "MIT"
 website = "https://example.com"
-code = "https://github.com/guecko13-cpu/gaming-star"
+code = "https://github.com/guecko13-cpu/casino-games-fun"
 
 [integration]
 yunohost = ">= 12.0"
@@ -18,9 +18,9 @@ architectures = "all"
 multi_instance = true
 ldap = false
 sso = true
-disk = "50M"
-ram.build = "50M"
-ram.runtime = "50M"
+disk = "200M"
+ram.build = "200M"
+ram.runtime = "200M"
 
 [install]
     [install.domain]
@@ -34,67 +34,41 @@ ram.runtime = "50M"
     type = "group"
     default = "visitors"
 
-    [install.init_maintenance_permission]
+    [install.init_admin_permission]
     type = "group"
     default = "admins"
 
-    [install.github_token]
-    type = "password"
-    optional = false
-    help.en = "Fine-grained PAT for the repo only, read access."
-    help.fr = "PAT fine-grained pour le dépôt uniquement, accès lecture."
-
-    [install.upstream_repo]
-    type = "string"
-    default = "guecko13-cpu/gaming-star"
-
-    [install.upstream_ref]
-    type = "string"
-    default = "main"
-
-    [install.package_repo_url]
-    type = "string"
-    default = "https://github.com/guecko13-cpu/gaming-star_ynh"
-
 [resources]
+    [resources.sources]
+        [resources.sources.main]
+        url = "https://github.com/guecko13-cpu/casino-games-fun/releases/download/v1.0.0/casino-games-fun.tar.gz"
+        sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
     [resources.system_user]
 
     [resources.install_dir]
 
     [resources.data_dir]
-    subdirs = ["logs", "cache", "uploads", "config"]
-    [resources.database]
-    type = "mysql"
 
     [resources.permissions]
         [resources.permissions.main]
         url = "/"
         init_permission = "init_main_permission"
 
-        [resources.permissions.maintenance]
-        url = "/ynh-maintenance"
-        show_tile = false
-        auth_header = true
-        init_permission = "init_maintenance_permission"
+        [resources.permissions.admin]
+        url = "/admin($|/)"
+        regex = true
+        additional_urls = ["/api/admin"]
+        init_permission = "init_admin_permission"
+
+    [resources.ports]
+        [resources.ports.main]
+
+    [resources.nodejs]
+    version = 20
 
     [resources.apt]
     packages = [
-        "curl",
-        "unzip",
         "ca-certificates",
+        "curl",
     ]
-    packages_from_raw_bash = """
-        php_version=$(apt-cache madison php | awk '{print $3}' | head -n1 | cut -d: -f2 | cut -d. -f1-2)
-        if dpkg --compare-versions "$php_version" ge 8.4; then
-            php=php8.4
-        elif dpkg --compare-versions "$php_version" ge 8.3; then
-            php=php8.3
-        else
-            php=php8.2
-        fi
-        echo "${php}-fpm ${php}-mysql ${php}-curl ${php}-mbstring ${php}-xml ${php}-gd ${php}-zip ${php}-intl"
-    """
-
-    [resources.nginx]
-
-    [resources.php_fpm]
