@@ -1,0 +1,15 @@
+[Unit]
+Description=Casino Games Fun backend
+After=network.target
+
+[Service]
+Type=simple
+User=__APP__
+WorkingDirectory=__INSTALL_DIR__/backend
+EnvironmentFile=__DATA_DIR__/.env
+ExecStart=__NODEJS_DIR__/node __INSTALL_DIR__/backend/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -5,78 +5,37 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-ynh_script_progression --message="Saving app settings..." --weight=1
-
 ynh_app_setting_set --app="$app" --key=domain --value="$domain"
 ynh_app_setting_set --app="$app" --key=path --value="$path"
-ynh_app_setting_set --app="$app" --key=init_main_permission --value="$init_main_permission"
-ynh_app_setting_set --app="$app" --key=init_maintenance_permission --value="$init_maintenance_permission"
-ynh_app_setting_set --app="$app" --key=upstream_repo --value="$upstream_repo"
-ynh_app_setting_set --app="$app" --key=upstream_ref --value="$upstream_ref"
-ynh_app_setting_set --app="$app" --key=package_repo_url --value="$package_repo_url"
-
-set +x
-ynh_app_setting_set --app="$app" --key=github_token --value="$github_token"
-set +x
-
-ynh_app_setting_set --app="$app" --key=db_name --value="$db_name"
-ynh_app_setting_set --app="$app" --key=db_user --value="$db_user"
-ynh_app_setting_set --app="$app" --key=db_pwd --value="$db_pwd"
-
-install_dir=$(ynh_app_setting_get --app="$app" --key=install_dir)
-data_dir=$(ynh_app_setting_get --app="$app" --key=data_dir)
-
-package_version="${YNH_APP_VERSION:-$(grep -m1 '^version' "/etc/yunohost/apps/${app}/manifest.toml" | cut -d'"' -f2)}"
-ynh_app_setting_set --app="$app" --key=package_version --value="$package_version"
 
 load_settings
-ensure_github_token
 
-ynh_script_progression --message="Downloading and installing sources..." --weight=5
+ynh_script_progression --message="Downloading application sources..." --weight=5
 
-install_sources
+ynh_setup_source --dest_dir="$install_dir"
 
-ynh_script_progression --message="Configuring application..." --weight=3
+ynh_script_progression --message="Configuring environment..." --weight=3
 
-create_config
-link_config
-write_metadata
+mkdir -p "$data_dir"
+ensure_env_file
+sync_static_assets
 
-mkdir -p "$data_dir/uploads" "$data_dir/cache" "$data_dir/logs"
-
-cat <<EOF_STATUS > "$data_dir/logs/maintenance.status.json"
-{
-  "status": "idle",
-  "message": "Disponible",
-  "last_upgrade": "n/a",
-  "last_check": "n/a",
-  "upstream_sha": "n/a"
-}
-EOF_STATUS
-
-chown -R "$app":"$app" "$data_dir"
-chown -R "$app":"$app" "$install_dir"
+mkdir -p "$data_dir/logs"
+chown -R "$app":"$app" "$install_dir" "$data_dir"
 
 ynh_script_progression --message="Configuring services..." --weight=4
 
-ynh_add_fpm_config
 ynh_add_nginx_config
+ynh_add_systemd_config
 
-ynh_script_progression --message="Deploying maintenance UI..." --weight=2
+ynh_systemd_action --service_name="$app" --action=enable
+ynh_systemd_action --service_name="$app" --action=start
 
-mkdir -p "$install_dir/maintenance"
-ynh_config_add --template="conf/maintenance/index.php" --destination="$install_dir/maintenance/index.php"
-ynh_config_add --template="conf/maintenance/action.php" --destination="$install_dir/maintenance/action.php"
-ynh_config_add --template="conf/maintenance/logs.php" --destination="$install_dir/maintenance/logs.php"
-ynh_config_add --template="conf/maintenance/style.css" --destination="$install_dir/maintenance/style.css"
+ynh_systemd_action --service_name=nginx --action=reload
 
-ynh_script_progression --message="Configuring maintenance helper..." --weight=2
+ynh_script_progression --message="Running healthcheck..." --weight=2
 
-ynh_config_add --template="conf/maintenance-root.sh" --destination="/usr/local/sbin/${app}-maintenance-root"
-chmod 750 "/usr/local/sbin/${app}-maintenance-root"
-
-setup_sudoers
-setup_logrotate
+check_health
 
 yunohost app ssowatconf
 

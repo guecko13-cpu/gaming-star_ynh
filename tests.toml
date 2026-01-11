@@ -1,9 +1,8 @@
 [default]
-    args = "--domain=example.tld --path=/gaming-star --github_token=changeme"
+    args = "--domain=example.tld --path=/casino-games-fun"
     test_format = 1
     install = true
     remove = true
     backup = true
     restore = true
-    change_url = true
     reinstall = true

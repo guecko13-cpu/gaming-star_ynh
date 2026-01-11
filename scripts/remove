@@ -5,11 +5,24 @@ set -euo pipefail
 source /usr/share/yunohost/helpers
 source "$(dirname "$0")/_common.sh"
 
-ynh_remove_fpm_config
-ynh_remove_nginx_config
+load_settings_allow_missing
 
-rm -f "/etc/sudoers.d/${app}"
-rm -f "/etc/logrotate.d/${app}"
-rm -f "/usr/local/sbin/${app}-maintenance-root"
+ynh_script_progression --message="Stopping services..." --weight=2
 
+if systemctl list-unit-files --all | grep -q "^${app}\.service"; then
+    ynh_systemd_action --service_name="$app" --action=stop
+fi
 
+ynh_script_progression --message="Removing configuration..." --weight=2
+
+if [ -f "/etc/systemd/system/${app}.service" ]; then
+    ynh_remove_systemd_config
+fi
+
+if [ -n "${domain:-}" ] && [ -f "/etc/nginx/conf.d/${domain}.d/${app}.conf" ]; then
+    ynh_remove_nginx_config
+fi
+
+ynh_systemd_action --service_name=nginx --action=reload
+
+ynh_script_progression --message="Removal completed." --weight=1
